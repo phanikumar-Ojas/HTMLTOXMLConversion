@@ -26,7 +26,7 @@ public class App
         HtmlParser htmlParser = new HtmlParser();
         try {
             HtmlContentList htmlContentList = htmlParser.parseHtmlFiles();
-            XMLData xmlData = HtmlContentToXMLContentTransformer.transform(htmlContentList);
+            XMLData xmlData = new XMLData(htmlContentList.getXmlParsedDataList());
             XMLConvertor.createXmlDocument(xmlData);
 
         } catch (IOException e) {

@@ -4,18 +4,20 @@ import java.util.List;
 
 public class HtmlContentList {
 
-    private List<String> htmlContent;
+    private List<XMLParsedData> xmlParsedDataList;
 
-    public HtmlContentList(List<String> htmlContent) {
-        this.htmlContent = htmlContent;
+    public List<XMLParsedData> getXmlParsedDataList() {
+        return xmlParsedDataList;
     }
 
-    public List<String> getHtmlContent() {
-        return htmlContent;
+    public void setXmlParsedDataList(List<XMLParsedData> xmlParsedDataList) {
+        this.xmlParsedDataList = xmlParsedDataList;
     }
 
-    public void setHtmlContent(List<String> htmlContent) {
-        this.htmlContent = htmlContent;
+    public HtmlContentList() {
     }
 
+    public HtmlContentList(List<XMLParsedData> xmlParsedDataList) {
+        this.xmlParsedDataList = xmlParsedDataList;
+    }
 }

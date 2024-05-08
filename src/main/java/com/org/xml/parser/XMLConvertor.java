@@ -14,9 +14,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 
 public class XMLConvertor {
@@ -45,8 +42,10 @@ public class XMLConvertor {
 
                 Element id = doc.createElement("id:id");
                 record.appendChild(id);
+                id.setTextContent(data.getId());
                 Element title = doc.createElement("dc:title");
                 record.appendChild(title);
+                title.setTextContent(data.getTitle());
                 Element enCreator = doc.createElement("dc:creator");
                 enCreator.setAttribute("xml:lang", "en");
                 enCreator.setTextContent("OECD");
@@ -57,6 +56,7 @@ public class XMLConvertor {
                 record.appendChild(frCreator);
                 Element description = doc.createElement("dc:description");
                 record.appendChild(description);
+                description.setTextContent(data.getDescription());
                 Element frPublisher = doc.createElement("dc:publisher");
                 frPublisher.setAttribute("xml:lang", "fr");
                 record.appendChild(frPublisher);

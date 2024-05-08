@@ -27,6 +27,8 @@ public class XMLParsedData {
     private String harvestTimestamp;
     private String harvestDate;
 
+    public XMLParsedData() {
+    }
 
     public XMLParsedData(String data) {
         this.data = data;
