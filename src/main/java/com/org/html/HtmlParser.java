@@ -48,6 +48,8 @@ public class HtmlParser {
 
     private XMLParsedData parseHtmlContent(String htmlContent) {
         XMLParsedData xmlParsedData = new XMLParsedData();
+        xmlParsedData.setFrPublisher("Éditions OCDE");
+        xmlParsedData.setEnPublisher("OECD Publishing");
         Document doc = Jsoup.parse(htmlContent);
         appendIDAndTitleData(doc, xmlParsedData);
         appendDescData(doc, xmlParsedData);
