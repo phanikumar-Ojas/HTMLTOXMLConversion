@@ -10,11 +10,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.print.Doc;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Year;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +28,8 @@ import java.util.stream.Stream;
 public class HtmlParser {
 
     private static final String HTML_PATH = "./HTMLFiles";
+
+//    private static final List<String> dates =
 
     public Set<String> listFiles(String dir) {
         return Stream.of(Objects.requireNonNull(new File(dir).listFiles()))
@@ -50,11 +54,14 @@ public class HtmlParser {
         XMLParsedData xmlParsedData = new XMLParsedData();
         xmlParsedData.setFrPublisher("Éditions OCDE");
         xmlParsedData.setEnPublisher("OECD Publishing");
+        xmlParsedData.setHarvestTimestamp(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")));
+        xmlParsedData.setHarvestDate(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         Document doc = Jsoup.parse(htmlContent);
         appendIDAndTitleData(doc, xmlParsedData);
         appendDescData(doc, xmlParsedData);
         appendVolume(doc, xmlParsedData);
         addCoverageData(doc, xmlParsedData);
+
         return xmlParsedData;
     }
 
@@ -94,6 +101,11 @@ public class HtmlParser {
                     String pageTopic = pageTopicNode.asText();
                     System.out.println("pageTopic: " + pageTopic);
                     xmlParsedData.setFrSubject(pageTopic);
+                    if (pageTopic.contains(",")) {
+                        String[] split = pageTopic.split(",");
+                        xmlParsedData.setFrPublisher(split[0]);
+                        xmlParsedData.setEnPublisher(split[1]);
+                    }
                 }
                 JsonNode pageLanguageNode = node.get("pageLanguage");
                 if (pageLanguageNode != null) {
@@ -186,13 +198,17 @@ public class HtmlParser {
                 if (span.html().contains("pages")) {
                     xmlParsedData.setCoverage(span.html().split(" ")[0]);
                 }
+
             }
 
             for (Element span : elementsByAttributeValue) {
                 if (span.html().contains("PDF")) {
                     xmlParsedData.setIsbn2(span.html().split(" ")[0]);
-                    xmlParsedData.setIsbn1("PDF");
                 }
+                if (span.html().contains("HTML")) {
+                    xmlParsedData.setIsbn1(span.html().split(" ")[0]);
+                }
+
             }
         }
         Elements liElements = bodyElement.getElementsByTag("li");
@@ -200,7 +216,7 @@ public class HtmlParser {
             String html = element.html();
             if (html.contains("ISSN :")) {
                 html = html.split(" ")[2];
-                xmlParsedData.setIssn2(html.substring(0,4)+'-'+html.substring(4));
+                xmlParsedData.setIssn2(html.substring(0, 4) + '-' + html.substring(4));
             }
         }
         String igo = bodyElement.getElementsByTag("input").attr("data-igo");

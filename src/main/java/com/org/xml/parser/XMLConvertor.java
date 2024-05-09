@@ -15,8 +15,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Year;
 
 public class XMLConvertor {
 
@@ -43,80 +42,81 @@ public class XMLConvertor {
                 record.setAttribute("xmlns:id", "http://indexdata.com/xml/dcExtension/");
 
                 Element id = doc.createElement("id:id");
-                id.setTextContent(data.getId());
-                record.appendChild(id);
+                addElementToRootElement(record, id, data.getId());
+
                 Element title = doc.createElement("dc:title");
-                title.setTextContent(data.getTitle());
-                record.appendChild(title);
+                addElementToRootElement(record, title, data.getTitle());
+
                 Element enCreator = doc.createElement("dc:creator");
                 enCreator.setAttribute("xml:lang", "en");
-                enCreator.setTextContent("OECD");
-                record.appendChild(enCreator);
+                addElementToRootElement(record, enCreator, "OECD");
+
                 Element frCreator = doc.createElement("dc:creator");
                 frCreator.setAttribute("xml:lang", "fr");
-                frCreator.setTextContent("OCDE");
-                record.appendChild(frCreator);
+                addElementToRootElement(record, frCreator, "OCDE");
+
                 Element description = doc.createElement("dc:description");
-                description.setTextContent(data.getDescription());
-                record.appendChild(description);
+                addElementToRootElement(record, description, data.getDescription());
+
                 Element frPublisher = doc.createElement("dc:publisher");
                 frPublisher.setAttribute("xml:lang", "fr");
-                frPublisher.setTextContent(data.getFrPublisher());
-                record.appendChild(frPublisher);
+                addElementToRootElement(record, frPublisher, data.getFrPublisher());
+
                 Element enPublisher = doc.createElement("dc:publisher");
                 enPublisher.setAttribute("xml:lang", "en");
-                enPublisher.setTextContent(data.getEnPublisher());
-                record.appendChild(enPublisher);
+                addElementToRootElement(record, enPublisher, data.getEnPublisher());
+
                 Element frSubject = doc.createElement("dc:subject");
                 frSubject.setAttribute("xml:lang", "fr");
-                frSubject.setTextContent(data.getFrSubject());
-                record.appendChild(frSubject);
+                addElementToRootElement(record, frSubject, data.getFrSubject());
+
                 Element enSubject = doc.createElement("dc:subject");
                 enSubject.setAttribute("xml:lang", "en");
-                enSubject.setTextContent(data.getEnSubject());
-                record.appendChild(enSubject);
+                addElementToRootElement(record, enSubject, data.getEnSubject());
+
                 Element volume = doc.createElement("id:volume");
-                volume.setTextContent(data.getVolume());
-                record.appendChild(volume);
+                String value = data.getVolume() != null ? data.getVolume() : Year.now().toString();
+                addElementToRootElement(record, volume, value);
+
                 Element coverage = doc.createElement("dc:coverage");
-                coverage.setTextContent(data.getCoverage());
-                record.appendChild(coverage);
+                addElementToRootElement(record, coverage, data.getCoverage());
+
                 Element date = doc.createElement("dc:date");
-                date.setTextContent(data.getDate());
-                record.appendChild(date);
+                addElementToRootElement(record, date, data.getDate());
+
                 Element isbn1 = doc.createElement("id:isbn");
-                isbn1.setTextContent(data.getIsbn1());
-                record.appendChild(isbn1);
+                addElementToRootElement(record, isbn1, data.getIsbn1());
+
                 Element isbn2 = doc.createElement("id:isbn");
-                isbn2.setTextContent(data.getIsbn2());
-                record.appendChild(isbn2);
+                addElementToRootElement(record, isbn2, data.getIsbn2());
+
                 Element issn1 = doc.createElement("id:issn");
-                issn1.setTextContent(data.getIssn1());
-                record.appendChild(issn1);
+                addElementToRootElement(record, issn1, data.getIssn1());
+
                 Element issn2 = doc.createElement("id:issn");
-                issn2.setTextContent(data.getIssn2());
-                record.appendChild(issn2);
+                addElementToRootElement(record, issn2, data.getIssn2());
+
                 Element docType = doc.createElement("id:doctype");
-                docType.setTextContent(data.getDocType());
-                record.appendChild(docType);
+                addElementToRootElement(record, docType, data.getDocType());
+
                 Element language = doc.createElement("dc:language");
-                language.setTextContent(data.getLanguage());
-                record.appendChild(language);
+                addElementToRootElement(record, language, data.getLanguage());
+
                 Element identifier = doc.createElement("dc:identifier");
-                identifier.setTextContent(data.getIdentifier());
-                record.appendChild(identifier);
+                addElementToRootElement(record, identifier, data.getIdentifier());
+
                 Element contents = doc.createElement("id:contents");
-                contents.setTextContent(data.getContents());
-                record.appendChild(contents);
+                addElementToRootElement(record, contents, data.getContents());
+
                 Element igo = doc.createElement("id:igo");
-                igo.setTextContent(data.getIgo());
-                record.appendChild(igo);
+                String igoValue = data.getIgo() != null ? igoValue = data.getIgo().toLowerCase() : null;
+                addElementToRootElement(record, igo, igoValue);
+
                 Element harvestTimestamp = doc.createElement("id:harvest-timestamp");
-                harvestTimestamp.setTextContent(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")));
-                record.appendChild(harvestTimestamp);
+                addElementToRootElement(record, harvestTimestamp, data.getHarvestTimestamp());
+
                 Element harvestDate = doc.createElement("id:harvest-date");
-                harvestDate.setTextContent(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-                record.appendChild(harvestDate);
+                addElementToRootElement(record, harvestDate, data.getHarvestDate());
             }
 
             createXMLDocument(doc);
@@ -143,6 +143,12 @@ public class XMLConvertor {
         } catch (TransformerException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void addElementToRootElement(Element record, Element toAdd, String value) {
+
+        toAdd.setTextContent(value);
+        record.appendChild(toAdd);
     }
 
 
