@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.Year;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 
@@ -29,7 +31,10 @@ public class HtmlParser {
 
     private static final String HTML_PATH = "./HTMLFiles";
 
-//    private static final List<String> dates =
+    private static final List<String> years = IntStream.rangeClosed(2000, Year.now().getValue())
+            .boxed()
+            .map(String::valueOf)
+            .collect(Collectors.toList());
 
     public Set<String> listFiles(String dir) {
         return Stream.of(Objects.requireNonNull(new File(dir).listFiles()))
@@ -195,8 +200,17 @@ public class HtmlParser {
         for (Element element : divElements) {
             Elements elementsByAttributeValue = element.getElementsByAttributeValue("class", "meta-item");
             for (Element span : elementsByAttributeValue) {
-                if (span.html().contains("pages")) {
-                    xmlParsedData.setCoverage(span.html().split(" ")[0]);
+                String spanData = span.html();
+                String[] spanArray = spanData.split(" ");
+                String firstIndex = spanArray[0];
+                if (spanData.contains("pages")) {
+                    xmlParsedData.setCoverage(firstIndex);
+                }
+                for (String year : years) {
+                    if (spanData.endsWith(year)) {
+                        int yearValue = Integer.parseInt(spanArray[2]);
+                        xmlParsedData.setDate(LocalDate.of(yearValue, 3, Integer.parseInt(firstIndex)).format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+                    }
                 }
 
             }
