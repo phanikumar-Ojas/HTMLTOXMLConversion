@@ -105,7 +105,7 @@ public class XMLConvertor {
                 Element identifier = doc.createElement("dc:identifier");
                 identifier.setTextContent(data.getIdentifier());
                 record.appendChild(identifier);
-                Element contents = doc.createElement("dc:contents");
+                Element contents = doc.createElement("id:contents");
                 contents.setTextContent(data.getContents());
                 record.appendChild(contents);
                 Element igo = doc.createElement("id:igo");

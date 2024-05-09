@@ -191,6 +191,7 @@ public class HtmlParser {
             for (Element span : elementsByAttributeValue) {
                 if (span.html().contains("PDF")) {
                     xmlParsedData.setIsbn2(span.html().split(" ")[0]);
+                    xmlParsedData.setIsbn1("PDF");
                 }
             }
         }
@@ -202,6 +203,9 @@ public class HtmlParser {
                 xmlParsedData.setIssn2(html.substring(0,4)+'-'+html.substring(4));
             }
         }
+        String igo = bodyElement.getElementsByTag("input").attr("data-igo");
+        xmlParsedData.setIgo(igo);
+
     }
 
     private Elements getElementsBasedOnTag(Document doc, String tagName) {
