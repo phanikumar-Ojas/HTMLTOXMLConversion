@@ -62,11 +62,13 @@ public class HtmlParser {
         xmlParsedData.setHarvestTimestamp(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")));
         xmlParsedData.setHarvestDate(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         Document doc = Jsoup.parse(htmlContent);
-        appendIDAndTitleData(doc, xmlParsedData);
-        appendDescData(doc, xmlParsedData);
-        appendVolume(doc, xmlParsedData);
-        addCoverageData(doc, xmlParsedData);
-
+        Element headElement = getElementsBasedOnTag(doc,"head").get(0);
+        Element bodyElement = getElementsBasedOnTag(doc,"body").get(0);
+        appendIDAndTitleData(headElement, xmlParsedData);
+        appendDescData(bodyElement, xmlParsedData);
+        appendVolume(bodyElement, xmlParsedData);
+        addCoverageData(bodyElement, xmlParsedData);
+        addContents(bodyElement, xmlParsedData);
         return xmlParsedData;
     }
 
@@ -137,23 +139,20 @@ public class HtmlParser {
 
     }
 
-    private void appendIDAndTitleData(Document doc, XMLParsedData xmlParsedData) {
-        Elements bodyElements = getElementsBasedOnTag(doc, "head");
-        Element headElement = bodyElements.get(0);
-        Elements title = headElement.getElementsByTag("title");
+    private void appendIDAndTitleData(Element mainElement, XMLParsedData xmlParsedData) {
+        Elements title = mainElement.getElementsByTag("title");
         String titleData = title.html();
         xmlParsedData.setTitle(titleData);
 
-        Elements scriptElements = headElement.getElementsByTag("script");
+        Elements scriptElements = mainElement.getElementsByTag("script");
         Elements type1 = scriptElements.attr("type", "text/javascript");
         String html = type1.html();
         getScriptsAsMap(html, xmlParsedData);
     }
 
-    private void appendDescData(Document doc, XMLParsedData xmlParsedData) {
-        Elements bodyElements = getElementsBasedOnTag(doc, "body");
-        Element bodyElement = bodyElements.get(0);
-        Elements divElements = bodyElement.getElementsByTag("div");
+    private void appendDescData(Element mainElement, XMLParsedData xmlParsedData) {
+
+        Elements divElements = mainElement.getElementsByTag("div");
 
         String description = null;
         for (Element element : divElements) {
@@ -175,10 +174,8 @@ public class HtmlParser {
         xmlParsedData.setDescription(description);
     }
 
-    private void appendVolume(Document doc, XMLParsedData xmlParsedData) {
-        Elements bodyElements = getElementsBasedOnTag(doc, "body");
-        Element bodyElement = bodyElements.get(0);
-        Elements divElements = bodyElement.getElementsByTag("ul");
+    private void appendVolume(Element mainElement, XMLParsedData xmlParsedData) {
+        Elements divElements = mainElement.getElementsByTag("ul");
         for (Element element : divElements) {
 
             Elements elementsByAttributeValue = element.getElementsByAttributeValue("class", "volumes-list");
@@ -193,10 +190,8 @@ public class HtmlParser {
         }
     }
 
-    private void addCoverageData(Document doc, XMLParsedData xmlParsedData) {
-        Elements bodyElements = getElementsBasedOnTag(doc, "body");
-        Element bodyElement = bodyElements.get(0);
-        Elements divElements = bodyElement.getElementsByTag("span");
+    private void addCoverageData( Element mainElement, XMLParsedData xmlParsedData) {
+        Elements divElements = mainElement.getElementsByTag("span");
         for (Element element : divElements) {
             Elements elementsByAttributeValue = element.getElementsByAttributeValue("class", "meta-item");
             for (Element span : elementsByAttributeValue) {
@@ -225,7 +220,7 @@ public class HtmlParser {
 
             }
         }
-        Elements liElements = bodyElement.getElementsByTag("li");
+        Elements liElements = mainElement.getElementsByTag("li");
         for (Element element : liElements) {
             String html = element.html();
             if (html.contains("ISSN :")) {
@@ -233,9 +228,25 @@ public class HtmlParser {
                 xmlParsedData.setIssn2(html.substring(0, 4) + '-' + html.substring(4));
             }
         }
-        String igo = bodyElement.getElementsByTag("input").attr("data-igo");
+        String igo = mainElement.getElementsByTag("input").attr("data-igo");
         xmlParsedData.setIgo(igo);
 
+    }
+
+    private void addContents(Element mainElement, XMLParsedData xmlParsedData) {
+        Elements pElements = mainElement.getElementsByTag("p");
+        List<String> contentsList = new ArrayList<>();
+
+        for (Element element : pElements) {
+            Elements aClassElements = element.getElementsByAttributeValue("class", "intro-item");
+            for (Element aClassElement : aClassElements) {
+                Elements aElements = aClassElement.getElementsByTag("a");
+                for (Element aElement : aElements) {
+                    contentsList.add(aElement.html());
+                }
+            }
+        }
+        xmlParsedData.setContents(String.join("--", contentsList));
     }
 
     private Elements getElementsBasedOnTag(Document doc, String tagName) {
