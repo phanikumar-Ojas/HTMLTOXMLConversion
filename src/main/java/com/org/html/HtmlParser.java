@@ -142,6 +142,9 @@ public class HtmlParser {
     private void appendIDAndTitleData(Element mainElement, XMLParsedData xmlParsedData) {
         Elements title = mainElement.getElementsByTag("title");
         String titleData = title.html();
+        if (!titleData.isEmpty()) {
+            titleData = titleData.split("\\|")[0];
+        }
         xmlParsedData.setTitle(titleData);
 
         Elements scriptElements = mainElement.getElementsByTag("script");
