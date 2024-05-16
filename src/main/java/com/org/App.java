@@ -3,7 +3,6 @@ package com.org;
 import com.org.dto.HtmlContentList;
 import com.org.dto.XMLData;
 import com.org.html.HtmlParser;
-import com.org.transformer.HtmlContentToXMLContentTransformer;
 import com.org.xml.parser.XMLConvertor;
 
 import java.io.IOException;

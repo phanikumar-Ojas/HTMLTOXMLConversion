@@ -3,8 +3,12 @@ package com.org.html;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.translate.Translate;
+import com.google.cloud.translate.TranslateOptions;
+import com.google.cloud.translate.Translation;
 import com.org.dto.HtmlContentList;
 import com.org.dto.XMLParsedData;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,26 +19,21 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.time.Year;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static com.org.xml.util.TimeUtils.getMonthsMap;
+import static com.org.xml.util.TimeUtils.getYears;
 
 
 public class HtmlParser {
 
     private static final String HTML_PATH = "./HTMLFiles";
 
-    private static final List<String> years = IntStream.rangeClosed(2000, Year.now().getValue())
-            .boxed()
-            .map(String::valueOf)
-            .collect(Collectors.toList());
+    private static final List<String> years = getYears();
 
     public Set<String> listFiles(String dir) {
         return Stream.of(Objects.requireNonNull(new File(dir).listFiles()))
@@ -48,6 +47,7 @@ public class HtmlParser {
         Set<String> files = listFiles(HTML_PATH);
         List<XMLParsedData> xmlParsedDataList = new ArrayList<>();
         for (String file : files) {
+            System.out.println("Parsing file: " + file);
             String htmlContent = String.join("\n", Files.readAllLines(Paths.get(HTML_PATH + "/" + file)));
             xmlParsedDataList.add(parseHtmlContent(htmlContent));
         }
@@ -56,29 +56,36 @@ public class HtmlParser {
 
 
     private XMLParsedData parseHtmlContent(String htmlContent) {
-        XMLParsedData xmlParsedData = new XMLParsedData();
-        xmlParsedData.setFrPublisher("Éditions OCDE");
-        xmlParsedData.setEnPublisher("OECD Publishing");
-        xmlParsedData.setHarvestTimestamp(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")));
-        xmlParsedData.setHarvestDate(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-        Document doc = Jsoup.parse(htmlContent);
-        Element headElement = getElementsBasedOnTag(doc,"head").get(0);
-        Element bodyElement = getElementsBasedOnTag(doc,"body").get(0);
-        appendIDAndTitleData(headElement, xmlParsedData);
-        appendDescData(bodyElement, xmlParsedData);
-        appendVolume(bodyElement, xmlParsedData);
-        addCoverageData(bodyElement, xmlParsedData);
-        addContents(bodyElement, xmlParsedData);
-        return xmlParsedData;
+
+        try {
+            XMLParsedData xmlParsedData = new XMLParsedData();
+            xmlParsedData.setFrCreator("OCDE");
+            xmlParsedData.setEnCreator("OECD");
+            xmlParsedData.setFrPublisher("Éditions OCDE");
+            xmlParsedData.setEnPublisher("OECD Publishing");
+            xmlParsedData.setHarvestTimestamp(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")));
+            xmlParsedData.setHarvestDate(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+            Document doc = Jsoup.parse(htmlContent);
+            Element headElement = getElementsBasedOnTag(doc, "head").get(0);
+            Element bodyElement = getElementsBasedOnTag(doc, "body").get(0);
+            Locale locale = appendIDAndTitleData(headElement, xmlParsedData);
+            appendDescData(bodyElement, xmlParsedData);
+            appendVolume(bodyElement, xmlParsedData);
+            addCoverageData(bodyElement, xmlParsedData, locale);
+            addContents(bodyElement, xmlParsedData);
+            return xmlParsedData;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void getScriptsAsMap(String scriptContent, XMLParsedData xmlParsedData) {
+    private Locale getScriptsAsMap(String scriptContent, XMLParsedData xmlParsedData) {
         String data_suffix = "}]";
         int index = scriptContent.indexOf(data_suffix);
         String jsonData = scriptContent.substring(0, index + 2);
         System.out.println("jsonData");
         String substring = jsonData.replace("dataLayer = ", "").replace("'", "\"");
-
+        String pageLanguage = "en";
         // Create ObjectMapper instance
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -117,7 +124,7 @@ public class HtmlParser {
                 JsonNode pageLanguageNode = node.get("pageLanguage");
                 if (pageLanguageNode != null) {
                     // Extract contentDOI value
-                    String pageLanguage = pageLanguageNode.asText();
+                    pageLanguage = pageLanguageNode.asText();
                     System.out.println("pageLanguage: " + pageLanguage);
                     xmlParsedData.setLanguage(pageLanguage);
                 }
@@ -136,10 +143,10 @@ public class HtmlParser {
         } catch (JsonProcessingException e) {
             System.out.println(e.getMessage());
         }
-
+        return pageLanguage.equals("en") ? Locale.ENGLISH : Locale.FRENCH;
     }
 
-    private void appendIDAndTitleData(Element mainElement, XMLParsedData xmlParsedData) {
+    private Locale appendIDAndTitleData(Element mainElement, XMLParsedData xmlParsedData) {
         Elements title = mainElement.getElementsByTag("title");
         String titleData = title.html();
         if (!titleData.isEmpty()) {
@@ -150,7 +157,7 @@ public class HtmlParser {
         Elements scriptElements = mainElement.getElementsByTag("script");
         Elements type1 = scriptElements.attr("type", "text/javascript");
         String html = type1.html();
-        getScriptsAsMap(html, xmlParsedData);
+        return getScriptsAsMap(html, xmlParsedData);
     }
 
     private void appendDescData(Element mainElement, XMLParsedData xmlParsedData) {
@@ -193,8 +200,13 @@ public class HtmlParser {
         }
     }
 
-    private void addCoverageData( Element mainElement, XMLParsedData xmlParsedData) {
+    private void addCoverageData(Element mainElement, XMLParsedData xmlParsedData, Locale locale) {
         Elements divElements = mainElement.getElementsByTag("span");
+        List<String> isbnElements = new LinkedList<>();
+        List<String> issnElements = new LinkedList<>();
+        Map<String, Integer> monthsMap = getMonthsMap(locale);
+        monthsMap.forEach((key, value) -> System.out.println(key + " " + value));
+
         for (Element element : divElements) {
             Elements elementsByAttributeValue = element.getElementsByAttributeValue("class", "meta-item");
             for (Element span : elementsByAttributeValue) {
@@ -204,10 +216,13 @@ public class HtmlParser {
                 if (spanData.contains("pages")) {
                     xmlParsedData.setCoverage(firstIndex);
                 }
+
                 for (String year : years) {
                     if (spanData.endsWith(year)) {
+                        String month = spanArray[1];
                         int yearValue = Integer.parseInt(spanArray[2]);
-                        xmlParsedData.setDate(LocalDate.of(yearValue, 3, Integer.parseInt(firstIndex)).format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+                        Integer monthAsInt = monthsMap.get(month);
+                        xmlParsedData.setDate(LocalDate.of(yearValue, monthAsInt !=null? monthAsInt: 3, Integer.parseInt(firstIndex)).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
                     }
                 }
 
@@ -215,10 +230,13 @@ public class HtmlParser {
 
             for (Element span : elementsByAttributeValue) {
                 if (span.html().contains("PDF")) {
-                    xmlParsedData.setIsbn2(span.html().split(" ")[0]);
+                    isbnElements.add(span.html().split(" ")[0]);
                 }
                 if (span.html().contains("HTML")) {
-                    xmlParsedData.setIsbn1(span.html().split(" ")[0]);
+                    isbnElements.add(span.html().split(" ")[0]);
+                }
+                if (span.html().contains("EPUB")) {
+                    isbnElements.add(span.html().split(" ")[0]);
                 }
 
             }
@@ -228,11 +246,13 @@ public class HtmlParser {
             String html = element.html();
             if (html.contains("ISSN :")) {
                 html = html.split(" ")[2];
-                xmlParsedData.setIssn2(html.substring(0, 4) + '-' + html.substring(4));
+                issnElements.add(html.substring(0, 4) + '-' + html.substring(4));
             }
         }
         String igo = mainElement.getElementsByTag("input").attr("data-igo");
         xmlParsedData.setIgo(igo);
+        xmlParsedData.setIsbnList(isbnElements);
+        xmlParsedData.setIssnList(issnElements);
 
     }
 
@@ -254,6 +274,18 @@ public class HtmlParser {
 
     private Elements getElementsBasedOnTag(Document doc, String tagName) {
         return doc.getElementsByTag(tagName);
+    }
+
+
+    private String parseContent(String targetLanguage, String content) {
+        if (StringUtils.isEmpty(content)) {
+            return null;
+        }
+        Translate translate = TranslateOptions.getDefaultInstance().getService();
+
+        // Translate the  word to the target language
+        Translation translation = translate.translate(content, Translate.TranslateOption.targetLanguage(targetLanguage));
+        return translation.getTranslatedText();
     }
 
 

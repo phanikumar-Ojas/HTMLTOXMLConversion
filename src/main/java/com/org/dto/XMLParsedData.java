@@ -1,8 +1,10 @@
 package com.org.dto;
 
+import java.time.Year;
+import java.util.List;
+
 public class XMLParsedData {
 
-    private String data;
     private String id;
     private String title;
     private String frCreator;
@@ -15,10 +17,8 @@ public class XMLParsedData {
     private String volume;
     private String coverage;
     private String date;
-    private String isbn1;
-    private String isbn2;
-    private String issn1;
-    private String issn2;
+    private List<String> isbnList;
+    private List<String> issnList;
     private String docType;
     private String language;
     private String identifier;
@@ -30,17 +30,6 @@ public class XMLParsedData {
     public XMLParsedData() {
     }
 
-    public XMLParsedData(String data) {
-        this.data = data;
-    }
-
-    public String getData() {
-        return data;
-    }
-
-    public void setData(String data) {
-        this.data = data;
-    }
 
     public String getId() {
         return id;
@@ -115,7 +104,7 @@ public class XMLParsedData {
     }
 
     public String getVolume() {
-        return volume;
+        return volume!=null?volume: Year.now().toString();
     }
 
     public void setVolume(String volume) {
@@ -138,36 +127,20 @@ public class XMLParsedData {
         this.date = date;
     }
 
-    public String getIsbn1() {
-        return isbn1;
+    public List<String> getIsbnList() {
+        return isbnList;
     }
 
-    public void setIsbn1(String isbn1) {
-        this.isbn1 = isbn1;
+    public void setIsbnList(List<String> isbnList) {
+        this.isbnList = isbnList;
     }
 
-    public String getIsbn2() {
-        return isbn2;
+    public List<String> getIssnList() {
+        return issnList;
     }
 
-    public void setIsbn2(String isbn2) {
-        this.isbn2 = isbn2;
-    }
-
-    public String getIssn1() {
-        return issn1;
-    }
-
-    public void setIssn1(String issn1) {
-        this.issn1 = issn1;
-    }
-
-    public String getIssn2() {
-        return issn2;
-    }
-
-    public void setIssn2(String issn2) {
-        this.issn2 = issn2;
+    public void setIssnList(List<String> issnList) {
+        this.issnList = issnList;
     }
 
     public String getDocType() {
