@@ -250,7 +250,7 @@ public class HtmlParser {
             }
         }
         String igo = mainElement.getElementsByTag("input").attr("data-igo");
-        xmlParsedData.setIgo(igo);
+        xmlParsedData.setIgo(igo.toLowerCase());
         xmlParsedData.setIsbnList(isbnElements);
         xmlParsedData.setIssnList(issnElements);
 

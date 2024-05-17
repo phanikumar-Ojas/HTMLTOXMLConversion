@@ -80,12 +80,16 @@ public class XMLConvertor {
         if(fieldValue == null || fieldValue.toString().isEmpty()){
             return;
         }
-        Element fieldTagElement = document.createElement(XMLTagEnum.valueOf(field.getName().toUpperCase()).getTag());
+        XMLTagEnum xmlTagEnum = XMLTagEnum.valueOf(field.getName().toUpperCase());
 
-        if(field.getType() == List.class){
+        Element fieldTagElement = document.createElement(xmlTagEnum.getTag());
+        if (xmlTagEnum.getAttrKey() != null) {
+            fieldTagElement.setAttribute(xmlTagEnum.getAttrKey(), xmlTagEnum.getAttrValue());
+        }
+        if (field.getType() == List.class) {
             List<String> list = (List<String>) fieldValue;
-            for(String value : list){
-                Element listElement = document.createElement(XMLTagEnum.valueOf(field.getName().toUpperCase()).getTag());
+            for (String value : list) {
+                Element listElement = document.createElement(xmlTagEnum.getTag());
 
                 addElementToRootElement(record, listElement, value);
             }
