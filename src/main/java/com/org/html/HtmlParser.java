@@ -1,6 +1,8 @@
 package com.org.html;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.translate.Translate;
@@ -31,7 +33,7 @@ import static com.org.xml.util.TimeUtils.getYears;
 
 public class HtmlParser {
 
-    private static final String HTML_PATH = "./HTMLFiles";
+    private static final String HTML_PATH = "./Input/Records";
 
     private static final List<String> years = getYears();
 
@@ -66,9 +68,14 @@ public class HtmlParser {
             xmlParsedData.setHarvestTimestamp(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")));
             xmlParsedData.setHarvestDate(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
             Document doc = Jsoup.parse(htmlContent);
-            Element headElement = getElementsBasedOnTag(doc, "head").get(0);
+            Elements headElements = getElementsBasedOnTag(doc, "head");
+            Element headElement = null;
+
+            if (!headElements.isEmpty()) {
+                headElement = headElements.get(0);
+            }
             Element bodyElement = getElementsBasedOnTag(doc, "body").get(0);
-            Locale locale = appendIDAndTitleData(headElement, xmlParsedData);
+            Locale locale = appendIDAndTitleData(doc,headElement, xmlParsedData);
             appendDescData(bodyElement, xmlParsedData);
             appendVolume(bodyElement, xmlParsedData);
             addCoverageData(bodyElement, xmlParsedData, locale);
@@ -88,6 +95,7 @@ public class HtmlParser {
         String pageLanguage = "en";
         // Create ObjectMapper instance
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.enable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
 
         // Parse JSON data
         JsonNode rootNode = null;
@@ -146,7 +154,10 @@ public class HtmlParser {
         return pageLanguage.equals("en") ? Locale.ENGLISH : Locale.FRENCH;
     }
 
-    private Locale appendIDAndTitleData(Element mainElement, XMLParsedData xmlParsedData) {
+    private Locale appendIDAndTitleData(Document doc, Element mainElement, XMLParsedData xmlParsedData) {
+        if(mainElement == null){
+            mainElement =doc;
+        }
         Elements title = mainElement.getElementsByTag("title");
         String titleData = title.html();
         if (!titleData.isEmpty()) {
@@ -170,14 +181,20 @@ public class HtmlParser {
             for (Element colX12 : colXs12Elements) {
                 Elements descElements = colX12.getElementsByAttributeValue("class", "description js-desc-fade");
                 for (Element desc : descElements) {
-                    Elements paraElements = desc.getElementsByTag("div").get(0).getElementsByTag("p");
-                    String html = paraElements.get(0).html();
-                    String strongHtml = "";
-                    if (paraElements.size() > 1) {
-                        strongHtml = paraElements.get(1).getElementsByTag("strong").html();
-
+                    Elements paraElements = desc.getElementsByTag("div");
+                    if (!paraElements.isEmpty()) {
+                        Element paraElement = paraElements.get(0);
+                        Elements paraElementsList = paraElement.getElementsByTag("p");
+                        if (!paraElementsList.isEmpty()) {
+                            Element paraElementData = paraElementsList.get(0);
+                            String html = paraElementData.html();
+                            String strongHtml = "";
+                            if (paraElementsList.size() > 1) {
+                                strongHtml = paraElementsList.get(1).getElementsByTag("strong").html();
+                            }
+                            description = html + strongHtml;
+                        }
                     }
-                    description = html + strongHtml;
                 }
             }
         }
@@ -212,6 +229,7 @@ public class HtmlParser {
             for (Element span : elementsByAttributeValue) {
                 String spanData = span.html();
                 String[] spanArray = spanData.split(" ");
+                if(spanArray.length>0){
                 String firstIndex = spanArray[0];
                 if (spanData.contains("pages")) {
                     xmlParsedData.setCoverage(firstIndex);
@@ -227,16 +245,21 @@ public class HtmlParser {
                 }
 
             }
+                }
 
             for (Element span : elementsByAttributeValue) {
-                if (span.html().contains("PDF")) {
-                    isbnElements.add(span.html().split(" ")[0]);
-                }
-                if (span.html().contains("HTML")) {
-                    isbnElements.add(span.html().split(" ")[0]);
-                }
-                if (span.html().contains("EPUB")) {
-                    isbnElements.add(span.html().split(" ")[0]);
+                String html = span.html();
+                String[] split = html.split(" ");
+                if(split.length>0) {
+                    if (html.contains("PDF")) {
+                        isbnElements.add(split[0]);
+                    }
+                    if (html.contains("HTML")) {
+                        isbnElements.add(split[0]);
+                    }
+                    if (html.contains("EPUB")) {
+                        isbnElements.add(split[0]);
+                    }
                 }
 
             }
@@ -265,7 +288,9 @@ public class HtmlParser {
             for (Element aClassElement : aClassElements) {
                 Elements aElements = aClassElement.getElementsByTag("a");
                 for (Element aElement : aElements) {
-                    contentsList.add(aElement.html());
+                    Elements strong = aElement.getElementsByTag("strong");
+                    Element strongData  = !strong.isEmpty()?strong.get(0): null;
+                    contentsList.add(strongData!=null? strongData.html(): aElement.html());
                 }
             }
         }
