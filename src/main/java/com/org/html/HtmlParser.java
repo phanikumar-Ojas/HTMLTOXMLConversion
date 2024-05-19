@@ -117,24 +117,30 @@ public class HtmlParser {
                     String siteName = siteNameNode.asText();
                     System.out.println("siteName: " + siteName);
                 }
-                JsonNode pageTopicNode = node.get("pageTopic");
-                if (pageTopicNode != null) {
-                    // Extract contentDOI value
-                    String pageTopic = pageTopicNode.asText();
-                    System.out.println("pageTopic: " + pageTopic);
-                    xmlParsedData.setFrSubject(pageTopic);
-                    if (pageTopic.contains(",")) {
-                        String[] split = pageTopic.split(",");
-                        xmlParsedData.setFrPublisher(split[0]);
-                        xmlParsedData.setEnPublisher(split[1]);
-                    }
-                }
+
                 JsonNode pageLanguageNode = node.get("pageLanguage");
                 if (pageLanguageNode != null) {
                     // Extract contentDOI value
                     pageLanguage = pageLanguageNode.asText();
                     System.out.println("pageLanguage: " + pageLanguage);
                     xmlParsedData.setLanguage(pageLanguage);
+                }
+
+                JsonNode pageTopicNode = node.get("pageTopic");
+                if (pageTopicNode != null) {
+                    // Extract contentDOI value
+                    String pageTopic = pageTopicNode.asText();
+                    System.out.println("pageTopic: " + pageTopic);
+                    if (Objects.equals(pageLanguage, "en")) {
+                        xmlParsedData.setEnSubject(pageTopic);
+                    } else {
+                        xmlParsedData.setFrSubject(pageTopic);
+                    }
+                    if (pageTopic.contains(",")) {
+                        String[] split = pageTopic.split(",");
+                        xmlParsedData.setFrPublisher(split[0]);
+                        xmlParsedData.setEnPublisher(split[1]);
+                    }
                 }
                 JsonNode pageTypeNode = node.get("pageType");
                 if (pageTypeNode != null) {
